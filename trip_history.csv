@@ -1,0 +1,5 @@
+TripNumber,TripType,StartStop,EndStop,TimeSlot,Students
+4,Inbound,Raipur,College,7:00 AM,40
+3,Outbound,College,Rispana,4:00 PM,30
+2,Outbound,College,Raipur,1:00 PM,45
+1,Inbound,Raipur,College,7:00 AM,50
