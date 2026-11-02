@@ -1,65 +1,62 @@
 #include <iostream>
-#include "stop.h"
-#include "route.h"
-#include "bus.h"
+#include "stack.h"
+
+tripRecord makeTrip(int n, std::string type, std::string s, std::string e, std::string t, int st){
+    tripRecord r;
+    r.tripNumber = n;
+    r.tripType = type;
+    r.startStop = s;
+    r.endStop = e;
+    r.timeSlot = t;
+    r.students = st;
+    return r;
+}
 
 int main()
 {
-    Stop raipur(1, "Raipur", 100, 100);
-    Stop nehrugram(2, "Nehrugram", 200, 150);
-    Stop rispana(3, "Rispana", 300, 200);
-    Stop college(4, "College", 400, 250);
+    Stack h;
+    sd cur;
 
-    raipur.set_waitingStudent(20);
-    nehrugram.set_waitingStudent(25);
-    rispana.set_waitingStudent(30);
-    college.set_waitingStudent(0);
+    // Test 1: empty stack
+    h.display();
+    std::cout << "Empty? " << h.isempty() << std::endl;
+    std::cout << "Pop on empty: " << h.pop(cur) << std::endl;
+    std::cout << "Peek on empty: " << h.peek(cur) << std::endl;
 
-    route r;
-    r.addstop(&raipur);
-    r.addstop(&nehrugram);
-    r.addstop(&rispana);
-    r.addstop(&college);
+    // Test 2: push three trips
+    h.push(makeTrip(1, "Inbound", "Raipur", "College", "7:00 AM", 50));
+    h.push(makeTrip(2, "Outbound", "College", "Raipur", "1:00 PM", 45));
+    h.push(makeTrip(3, "Outbound", "College", "Rispana", "4:00 PM", 30));
+    std::cout << "Size: " << h.size() << std::endl;
+    h.display();
 
-    // Test 1: fresh bus
-    bus b(50);
-    b.display();
+    // Test 3: peek does not remove
+    h.peek(cur);
+    std::cout << "Peek: trip " << cur.tripNumber << ", size still " << h.size() << std::endl;
 
-    // Test 2: inbound trip, bus walks the route and boards at each stop
-    b.setPosition(r.gethead());
-    do {
-        b.setState("Boarding");
-        int boarded = b.boardFrom(b.getPosition()->stop);
-        std::cout << b.getPosition()->stop->get_name()
-                  << ": boarded " << boarded
-                  << ", load " << b.getLoad()
-                  << ", seats left " << b.seatsLeft() << std::endl;
-        b.setState("Moving");
-    } while (b.moveNext());
-    b.setState("Arrived");
-    b.display();
+    // Test 4: pop removes the latest
+    h.pop(cur);
+    std::cout << "Popped: trip " << cur.tripNumber << ", size " << h.size() << std::endl;
+    h.peek(cur);
+    std::cout << "New top: trip " << cur.tripNumber << std::endl;
 
-    // Test 3: full check and dropping students
-    std::cout << "Full? " << b.isFull() << std::endl;
-    b.dropStudents(20);
-    std::cout << "Load after dropping 20: " << b.getLoad() << std::endl;
-    b.dropStudents(100);
-    std::cout << "Load after dropping 100: " << b.getLoad() << std::endl;
-    b.dropStudents(-5);
-    std::cout << "Load after dropping -5: " << b.getLoad() << std::endl;
+    // Test 5: walk the stack with get_top (how the file handler will read it)
+    stackNode* p = h.get_top();
+    int total = 0;
+    while (p != NULL)
+    {
+        std::cout << "Walking: trip " << p->data.tripNumber << std::endl;
+        total += p->data.students;
+        p = p->next;
+    }
+    std::cout << "Total students in history: " << total << std::endl;
 
-    // Test 4: moving past the end, and moving with no position set
-    std::cout << "Move past end: " << b.moveNext() << std::endl;
-    bus b2(50);
-    std::cout << "No-position moveNext: " << b2.moveNext() << std::endl;
-    b2.display();
-
-    // Test 5: outbound travel path (reversed route)
-    r.reverse();
-    b.setPosition(r.gethead());
-    std::cout << "After reverse, start: " << b.getPosition()->stop->get_name() << std::endl;
-    b.moveNext();
-    std::cout << "Next stop: " << b.getPosition()->stop->get_name() << std::endl;
+    // Test 6: empty it completely, then reuse
+    while (h.pop(cur)) { }
+    std::cout << "Empty after popping all? " << h.isempty() << std::endl;
+    h.push(makeTrip(4, "Inbound", "Raipur", "College", "7:00 AM", 40));
+    h.peek(cur);
+    std::cout << "Reuse: trip " << cur.tripNumber << ", size " << h.size() << std::endl;
 
     return 0;
 }
