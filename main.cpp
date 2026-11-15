@@ -1,6 +1,5 @@
 #include <iostream>
 #include <string>
-#include <cstdlib>
 #include "stop.h"
 #include "route.h"
 #include "bus.h"
@@ -9,70 +8,67 @@
 #include "filehandler.h"
 #include "graph.h"
 
-int getnum(std::string msg,int low,int high){
-    int x;
-    while(true){
-        std::cout<<msg;
-        if(std::cin>>x && x>=low && x<=high){
-            std::cin.ignore(1000,'\n');
-            return x;
-        }
-        if(std::cin.eof()){
-            exit(0);
-        }
-        std::cin.clear();
-        std::cin.ignore(1000,'\n');
-        std::cout<<"Wrong input, enter "<<low<<" to "<<high<<std::endl;
-    }
-}
-
 std::string getslot(bool in){
     int c;
     if(in){
         std::cout<<"1. 7:00 AM"<<std::endl;
         std::cout<<"2. 11:00 AM"<<std::endl;
-        c=getnum("Choose time slot: ",1,2);
+        std::cout<<"Choose time slot: ";
+        std::cin>>c;
         if(c==1){
             return "7:00 AM";
         }
-        return "11:00 AM";
+        if(c==2){
+            return "11:00 AM";
+        }
+        return "";
     }
     std::cout<<"1. 1:00 PM"<<std::endl;
     std::cout<<"2. 4:00 PM"<<std::endl;
     std::cout<<"3. 6:00 PM"<<std::endl;
-    c=getnum("Choose time slot: ",1,3);
+    std::cout<<"Choose time slot: ";
+    std::cin>>c;
     if(c==1){
         return "1:00 PM";
     }
     if(c==2){
         return "4:00 PM";
     }
-    return "6:00 PM";
+    if(c==3){
+        return "6:00 PM";
+    }
+    return "";
 }
 
 route* getroute(route& r1,route& r2){
+    int c;
     std::cout<<"1. ";
     r1.display();
     std::cout<<"2. ";
     r2.display();
-    int c=getnum("Choose route: ",1,2);
+    std::cout<<"Choose route: ";
+    std::cin>>c;
     if(c==1){
         return &r1;
     }
-    return &r2;
+    if(c==2){
+        return &r2;
+    }
+    return NULL;
 }
 
 void getcount(route& r,bool in){
     routeNode* cur=r.gethead();
+    int n;
     while(cur->next!=NULL){
-        std::string msg;
         if(in){
-            msg="Students waiting at "+cur->stop->get_name()+": ";
+            std::cout<<"Students waiting at "<<cur->stop->get_name()<<": ";
         }
         else{
-            msg="Students going to "+cur->stop->get_name()+": ";
+            std::cout<<"Students going to "<<cur->stop->get_name()<<": ";
         }
-        cur->stop->set_waitingStudent(getnum(msg,0,200));
+        std::cin>>n;
+        cur->stop->set_waitingStudent(n);
         cur=cur->next;
     }
 }
@@ -81,12 +77,37 @@ void runtrip(Scheduler& sch){
     std::cout<<sch.getMessage()<<std::endl;
     bool more=true;
     while(more){
-        std::cout<<"Press Enter for next stop...";
-        std::cin.get();
         more=sch.step();
         std::cout<<sch.getMessage()<<std::endl;
     }
     std::cout<<"Trip added to history"<<std::endl;
+}
+
+void dotrip(bool in,route& r1,route& r2,Scheduler& sch){
+    route* rt=getroute(r1,r2);
+    if(rt==NULL){
+        std::cout<<"Wrong route"<<std::endl;
+        return;
+    }
+    std::string sl=getslot(in);
+    if(sl==""){
+        std::cout<<"Wrong time slot"<<std::endl;
+        return;
+    }
+    getcount(*rt,in);
+    bool started;
+    if(in){
+        started=sch.startInbound(rt,sl);
+    }
+    else{
+        started=sch.startOutbound(rt,sl);
+    }
+    if(started){
+        runtrip(sch);
+    }
+    else{
+        std::cout<<"Could not start trip"<<std::endl;
+    }
 }
 
 void exportfile(Stack& h){
@@ -138,7 +159,6 @@ int main(){
     g.addedge(1,2);
     g.addedge(2,3);
     g.addedge(3,4);
-    g.addedge(2,4);
     g.addedge(5,6);
     g.addedge(6,7);
     g.addedge(7,4);
@@ -149,6 +169,7 @@ int main(){
 
     bool run=true;
     while(run){
+        int ch;
         std::cout<<std::endl;
         std::cout<<"===== College Bus Simulator ====="<<std::endl;
         std::cout<<"1. Inbound trip (to college)"<<std::endl;
@@ -157,28 +178,13 @@ int main(){
         std::cout<<"4. Show routes"<<std::endl;
         std::cout<<"5. Export history to CSV"<<std::endl;
         std::cout<<"6. Exit"<<std::endl;
-        int ch=getnum("Enter choice: ",1,6);
+        std::cout<<"Enter choice: ";
+        std::cin>>ch;
         if(ch==1){
-            route* rt=getroute(r1,r2);
-            std::string sl=getslot(true);
-            getcount(*rt,true);
-            if(sch.startInbound(rt,sl)){
-                runtrip(sch);
-            }
-            else{
-                std::cout<<"Could not start trip"<<std::endl;
-            }
+            dotrip(true,r1,r2,sch);
         }
         else if(ch==2){
-            route* rt=getroute(r1,r2);
-            std::string sl=getslot(false);
-            getcount(*rt,false);
-            if(sch.startOutbound(rt,sl)){
-                runtrip(sch);
-            }
-            else{
-                std::cout<<"Could not start trip"<<std::endl;
-            }
+            dotrip(false,r1,r2,sch);
         }
         else if(ch==3){
             h.display();
@@ -189,8 +195,11 @@ int main(){
         else if(ch==5){
             exportfile(h);
         }
-        else{
+        else if(ch==6){
             run=false;
+        }
+        else{
+            std::cout<<"Wrong choice"<<std::endl;
         }
     }
     return 0;
