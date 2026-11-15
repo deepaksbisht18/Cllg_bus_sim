@@ -72,3 +72,8 @@ void bus::display(){
     }
     std::cout << std::endl;
 }
+void bus::reset(){
+    load=0;
+    current=NULL;
+    state="Idle";
+}
