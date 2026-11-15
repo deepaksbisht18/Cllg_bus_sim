@@ -22,6 +22,7 @@ class bus{
     void setState(std::string st);
     std::string getState();
     void display();
+    void reset();
 
 };
 #endif
